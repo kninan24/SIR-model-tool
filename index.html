@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hypothetical Influenza SIR Dashboard</title>
+  <meta name="description" content="Static GitHub Pages dashboard for a hypothetical influenza SIR model." />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script defer src="assets/app.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div>
+      <p class="eyebrow">Static dashboard</p>
+      <h1>Hypothetical Influenza SIR Model</h1>
+      <p class="subtitle">
+        Explore a simple susceptible-infectious-recovered model for influenza-like transmission.
+        The model is compared against an embedded hypothetical weekly influenza-like illness dataset.
+      </p>
+    </div>
+    <div class="badge">No backend required</div>
+  </header>
+
+  <main>
+    <section class="panel intro-panel">
+      <h2>Model overview</h2>
+      <p>
+        This dashboard simulates a closed-population SIR model and compares its scaled weekly incidence
+        with a small embedded hypothetical influenza-like illness dataset. It is intentionally simple,
+        educational, and fully static for GitHub Pages.
+      </p>
+      <div class="equations" aria-label="SIR equations">
+        <div><strong>dS/dt</strong> = -βSI/N</div>
+        <div><strong>dI/dt</strong> = βSI/N - γI</div>
+        <div><strong>dR/dt</strong> = γI</div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <aside class="panel controls-panel">
+        <h2>Inputs</h2>
+
+        <label for="preset">Scenario preset</label>
+        <select id="preset">
+          <option value="mild">Mild influenza season</option>
+          <option value="typical" selected>Typical influenza season</option>
+          <option value="severe">Severe influenza season</option>
+          <option value="custom">Custom</option>
+        </select>
+
+        <div class="control-group">
+          <label for="population">Population size, N</label>
+          <input id="population" type="range" min="1000" max="100000" step="1000" value="10000" />
+          <output id="populationValue">10,000</output>
+        </div>
+
+        <div class="control-group">
+          <label for="initialInfectious">Initial infectious, I₀</label>
+          <input id="initialInfectious" type="range" min="1" max="500" step="1" value="25" />
+          <output id="initialInfectiousValue">25</output>
+        </div>
+
+        <div class="control-group">
+          <label for="initialImmune">Initially immune/recovered (%)</label>
+          <input id="initialImmune" type="range" min="0" max="60" step="1" value="10" />
+          <output id="initialImmuneValue">10%</output>
+        </div>
+
+        <div class="control-group">
+          <label for="r0">Basic reproduction number, R₀</label>
+          <input id="r0" type="range" min="0.8" max="3.0" step="0.05" value="1.45" />
+          <output id="r0Value">1.45</output>
+        </div>
+
+        <div class="control-group">
+          <label for="infectiousPeriod">Infectious period (days)</label>
+          <input id="infectiousPeriod" type="range" min="1" max="10" step="0.25" value="4" />
+          <output id="infectiousPeriodValue">4.0</output>
+        </div>
+
+        <div class="control-group">
+          <label for="duration">Simulation length (days)</label>
+          <input id="duration" type="range" min="30" max="365" step="5" value="180" />
+          <output id="durationValue">180</output>
+        </div>
+
+        <div class="control-group">
+          <label for="reportingScale">Reporting multiplier, ρ</label>
+          <input id="reportingScale" type="range" min="0.001" max="0.080" step="0.001" value="0.020" />
+          <output id="reportingScaleValue">0.020</output>
+        </div>
+
+        <div class="buttons">
+          <button id="resetButton" type="button">Reset typical season</button>
+          <button id="downloadButton" type="button">Download CSV</button>
+        </div>
+      </aside>
+
+      <section class="dashboard-content">
+        <div class="metric-grid" aria-live="polite">
+          <article class="metric-card">
+            <span>β transmission rate</span>
+            <strong id="betaMetric">0.363/day</strong>
+          </article>
+          <article class="metric-card">
+            <span>γ recovery rate</span>
+            <strong id="gammaMetric">0.250/day</strong>
+          </article>
+          <article class="metric-card">
+            <span>Peak infectious</span>
+            <strong id="peakMetric">—</strong>
+          </article>
+          <article class="metric-card">
+            <span>Final attack rate</span>
+            <strong id="attackMetric">—</strong>
+          </article>
+          <article class="metric-card">
+            <span>Model vs data RMSE</span>
+            <strong id="rmseMetric">—</strong>
+          </article>
+        </div>
+
+        <section class="panel chart-panel">
+          <div class="chart-heading">
+            <div>
+              <h2>Model compared with hypothetical data</h2>
+              <p>Weekly observed ILI-like values compared with scaled SIR weekly incidence: ρ × incidence.</p>
+            </div>
+          </div>
+          <canvas id="fitChart" aria-label="Observed data compared with model prediction"></canvas>
+        </section>
+
+        <section class="panel chart-panel">
+          <div class="chart-heading">
+            <div>
+              <h2>SIR compartments</h2>
+              <p>Susceptible, infectious, and recovered populations over time.</p>
+            </div>
+          </div>
+          <canvas id="compartmentChart" aria-label="SIR compartment line chart"></canvas>
+        </section>
+
+        <section class="panel chart-panel">
+          <div class="chart-heading">
+            <div>
+              <h2>Daily incidence and effective Rt</h2>
+              <p>New infections per day and the time-varying effective reproduction number.</p>
+            </div>
+          </div>
+          <canvas id="incidenceChart" aria-label="Incidence and Rt line chart"></canvas>
+        </section>
+      </section>
+    </section>
+
+    <section class="panel notes-panel">
+      <h2>Interpretation notes</h2>
+      <ul>
+        <li><strong>Hypothetical only:</strong> the observed data are embedded demonstration values, not real CDC surveillance.</li>
+        <li><strong>β</strong> is calculated from R₀ and γ using β = R₀ × γ.</li>
+        <li><strong>γ</strong> is calculated as 1 / infectious period.</li>
+        <li><strong>ρ</strong> is a reporting/scaling multiplier used to compare model incidence to the observed data scale.</li>
+        <li><strong>Effective Rt</strong> declines as susceptible people are depleted: Rt = R₀ × S/N.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>Static HTML/CSS/JavaScript dashboard. Suitable for GitHub Pages.</p>
+  </footer>
+</body>
+</html>
